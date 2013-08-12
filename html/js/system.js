@@ -30,27 +30,36 @@ function Installer() {
 	trans.start()
     }
 
-    this.upgrade = function() {
+    this.checkUpgrade = function(callback) {
 	this.update(function() {
 	    $.ajax({
 		method: 'get',
 		url: '/system/upgrade/dependencies',
 		success: function(packages) {
-		    self.download(packages, self.doUpgrade)
-		}
+		    callback(packages)
+		},
+		dataType: 'json'
 	    })
 	})
     }
 
-    this.doUpgrade = function() {
-	$.ajax({
-	    method: 'get',
-	    url: '/system/upgrade',
-	    success: self.finish
+    this.upgrade = function(callback) {
+	this.checkUpgrade(function(packages) {
+	    self.download(packages, function() {
+		self.doUpgrade(callback) 
+	    })
 	})
     }
 
-    this.install = function(packageName) {
+    this.doUpgrade = function(callback) {
+	$.ajax({
+	    method: 'get',
+	    url: '/system/upgrade',
+	    success: callback,
+	})
+    }
+
+    this.install = function(packageName, callback) {
 	this.update(function() {
 	    $.ajax({
 		method: 'get',
@@ -58,32 +67,47 @@ function Installer() {
 		success: function(packages) {
 		    self.download(packages, 
 				  function() {
-				      self.doInstall(packageName)
+				      self.doInstall(packageName, callback)
 				  })
-		}
+		},
+		dataType: 'json'
 	    })
 	})
     }
 
-    this.doInstall = function(packageName) {
+    this.doInstall = function(packageName, callback) {
 	$.ajax({
 	    method: 'get',
 	    url: '/system/package/install/'+packageName,
-	    success: self.finish
+	    success: callback
 	})
     }
 
     this.download = function(packages, callback) {
+	self.downloadQueue = packages
+	var totalFiles = packages.length
+	var fileNum = 0
 	var processNext = function() {
-	    if (packages.length == 0)
+	    if (self.downloadQueue.length == 0) {
 		return callback()
-	    var fileName = packages.shift()
+	    }
+	    var fileName = self.downloadQueue.shift()
+	    fileNum += 1
 	    var trans = new Transference(REPOSITORY,
 					 '/system/package/download',
 					 fileName)
 	    trans.reportFinished = processNext
+	    trans.reportStatus = function(status) {
+		status.totalFiles = totalFiles
+		status.numFile = fileNum
+		status.currentFile = fileName
+		self.reportStatus(status)
+	    }
 	    trans.start()
 	}
 	processNext()
     }
+
+    this.downloadQueue = []
+    this.reportStatus = function() {}
 }

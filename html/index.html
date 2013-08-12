@@ -9,14 +9,32 @@
     <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="js/file_transfer.js"></script>
     <script type="text/javascript" src="js/system.js"></script>
+    <script type="text/javascript" src="js/ui.js"></script>
     <script>
       var REPOSITORY = 'http://packages.portalmod.com/api';
-      $(document).ready(function() {
-          new Installer().upgrade()
-      })
     </script>
 </head>
 <body>
-  WIP
+  <div id="actions">
+    <div id="install">
+      Install package: <input /><button id="install">install</button>
+    </div>
+    <div id="upgrade-needed" class="state">
+      The following packages need upgrade:
+      <ul></ul>
+      <button>Upgrade now</button>
+    </div>
+    <div id="up-to-date" class="state">
+      System is up-to-date
+    </div>
+  </div>
+  <div id="progress">
+    <div id="download-info" class="download-action hidden">
+      <div id="downloading-file">Downloading <span id="filename"></span> (<span id="file-number"></span>/<span id="total-files"></span>)</div>
+    </div>
+    <div id="download-start" class="download-action hidden">Starting download...</div>
+    <div id="download-installing" class="download-action hidden">Installing packages...</div>
+    <div id="progressbar-wrapper"><div id="progressbar"></div></div>
+  </div>
 </body>
     

@@ -15,12 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json, subprocess, re
+import json, subprocess, re, glob
+from os.path import join
 from tornado import web, gen, ioloop, options, template
 from pacman import fileserver
-from pacman.system import (sync_pacman_db, get_pacman_upgrade_list, 
-                           pacman_upgrade, get_pacman_install_list,
-                           pacman_install)
 from pacman.settings import check_environment
 
 from pacman.settings import (DOWNLOAD_TMP_DIR, REPOSITORY_PUBLIC_KEY, LOCAL_REPOSITORY_DIR,

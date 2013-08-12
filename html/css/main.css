@@ -1,0 +1,38 @@
+.state, .hidden {
+    display: none;
+}
+
+#progress {
+    display: none;
+    height: 300px;
+    text-align: center;
+    width: 500px;
+}
+
+#download-info {
+    display: none;
+}
+
+.download-action {
+    margin: 10px 0;
+}
+
+#filename {
+    font-weight: bold;
+}
+
+#progressbar-wrapper {
+    width: 400px;
+    height: 30px;
+    border: 1px solid black;
+    border-radius: 5px;
+    margin-left: 50px;
+}
+
+#progressbar {
+    background-color: #8888ff;
+    width: 0;
+    height: 100%;
+}
+
+
