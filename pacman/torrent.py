@@ -5,7 +5,6 @@ import os, json, base64, shutil
 from hashlib import md5
 from . import crypto
 from . import json_handler
-from bson.objectid import ObjectId
 
 class TorrentGenerator(object):
     
