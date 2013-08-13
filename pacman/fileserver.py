@@ -96,6 +96,7 @@ class FileReceiver(tornado.web.RequestHandler):
 
     @tornado.web.asynchronous
     def post(self, sessionid=None, chunk_number=None):
+        self.set_header('Access-Control-Allow-Origin', self.request.headers['Origin'])
         # self.result can be set by subclass in process_file,
         # so that answer will be returned to browser
         self.result = None

@@ -19,12 +19,21 @@
  *   - 
  */
 
-function Installer() {
+function Installer(options) {
     var self = this
 
+    options = $.extend({
+	// This is usually defined, but let's have it hardcoded here anyway
+	repository: 'http://packages.portalmod.com/api', 
+	// The address of the server where packages will be installed. Empty is
+	// ok if the interface is being served by the package server
+	localServer: '',
+	reportStatus: function(status) {}
+    }, options)
+
     this.update = function(callback) {
-	var trans = new Transference(REPOSITORY,
-				     '/system/update',
+	var trans = new Transference(options.repository,
+				     options.localServer + '/system/update',
 				     'mod.db.tar.gz');
 	trans.reportFinished = callback
 	trans.start()
@@ -34,7 +43,7 @@ function Installer() {
 	this.update(function() {
 	    $.ajax({
 		method: 'get',
-		url: '/system/upgrade/dependencies',
+		url: options.localServer + '/system/upgrade/dependencies',
 		success: function(packages) {
 		    callback(packages)
 		},
@@ -54,7 +63,7 @@ function Installer() {
     this.doUpgrade = function(callback) {
 	$.ajax({
 	    method: 'get',
-	    url: '/system/upgrade',
+	    url: options.localServer + '/system/upgrade',
 	    success: callback,
 	})
     }
@@ -63,7 +72,7 @@ function Installer() {
 	this.update(function() {
 	    $.ajax({
 		method: 'get',
-		url: '/system/package/dependencies/'+packageName,
+		url: options.localServer + '/system/package/dependencies/'+packageName,
 		success: function(packages) {
 		    self.download(packages, 
 				  function() {
@@ -78,7 +87,7 @@ function Installer() {
     this.doInstall = function(packageName, callback) {
 	$.ajax({
 	    method: 'get',
-	    url: '/system/package/install/'+packageName,
+	    url: options.localServer + '/system/package/install/'+packageName,
 	    success: callback
 	})
     }
@@ -93,15 +102,15 @@ function Installer() {
 	    }
 	    var fileName = self.downloadQueue.shift()
 	    fileNum += 1
-	    var trans = new Transference(REPOSITORY,
-					 '/system/package/download',
+	    var trans = new Transference(options.repository,
+					 options.localServer + '/system/package/download',
 					 fileName)
 	    trans.reportFinished = processNext
 	    trans.reportStatus = function(status) {
 		status.totalFiles = totalFiles
 		status.numFile = fileNum
 		status.currentFile = fileName
-		self.reportStatus(status)
+		options.reportStatus(status)
 	    }
 	    trans.start()
 	}
@@ -109,5 +118,4 @@ function Installer() {
     }
 
     this.downloadQueue = []
-    this.reportStatus = function() {}
 }

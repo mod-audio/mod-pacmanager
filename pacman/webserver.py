@@ -89,6 +89,7 @@ class UpgradeDependenciesList(web.RequestHandler):
     @web.asynchronous
     @gen.engine
     def get(self):
+        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Sup'])
         packages = parse_pacman_output(proc.stdout.read())
 
@@ -106,6 +107,7 @@ class PackageDependenciesList(web.RequestHandler):
     @web.asynchronous
     @gen.engine
     def get(self, package_name):
+        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Sp', package_name])
         packages = parse_pacman_output(proc.stdout.read())
 
@@ -123,6 +125,7 @@ class Upgrade(web.RequestHandler):
     @web.asynchronous
     @gen.engine
     def get(self):
+        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Su'])
         clean_repo()
 
@@ -137,6 +140,7 @@ class PackageInstall(web.RequestHandler):
     @web.asynchronous
     @gen.engine
     def get(self, package_name):
+        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-S', package_name])
         clean_repo()
         self.write(json.dumps(True))

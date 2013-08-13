@@ -1,8 +1,10 @@
 $(document).ready(function() {
 
     $('#upgrade-needed button').click(function() {
-	var installer = new Installer()
-	installer.reportStatus = reportInstallationStatus
+	var installer = new Installer({ 
+	    repository: REPOSITORY,
+	    reportStatus: reportInstallationStatus
+	})
 	startDownload()
 	installer.upgrade(endDownload)
     })
@@ -11,8 +13,10 @@ $(document).ready(function() {
 	var packageName = $('#install input').val()
 	if (!packageName) 
 	    return alert('You have to choose a package name')
-	var installer = new Installer()
-	installer.reportStatus = reportInstallationStatus
+	var installer = new Installer({ 
+	    repository: REPOSITORY,
+	    reportStatus: reportInstallationStatus
+	})
 	startDownload()
 	installer.install(packageName, endDownload)
     })
@@ -21,7 +25,8 @@ $(document).ready(function() {
 })
 
 function checkState() {
-    new Installer().checkUpgrade(function(packages) { 
+    var installer = new Installer({ repository: REPOSITORY })
+    installer.checkUpgrade(function(packages) { 
 	for (var i=0; i<packages.length; i++)
 	    $('<li>').html(packages[i]).appendTo($('#upgrade-needed ul'))
 	if (packages.length > 0) {
