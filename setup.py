@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os
 
 setup(name = 'mod-pacmanager',
-      version = '0.1',
+      version = '0.9',
       description = 'MOD ArchLinux Package Manager',
       long_description = 'MOD - Musician Operated Device - ArchLinux Package Manager',
       author = "Hacklab and AGR",
@@ -24,5 +24,5 @@ setup(name = 'mod-pacmanager',
           'Operating System :: OS Independent',
           'Programming Language :: Python',
         ],
-      url = 'http://portalmod.com/',
+      url = 'http://github.com/portalmod/mod-pacmanager',
 )
