@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json, subprocess, re, glob
-from os.path import join
+import os
 from tornado import web, gen, ioloop, options, template
 from pacman import fileserver
 from pacman.settings import check_environment
@@ -49,7 +49,11 @@ def parse_pacman_output(output):
              for line in output.split() if "://" in line ]
 
 def clean_repo():
-    subprocess.Popen(['rm'] + glob.glob(join(LOCAL_REPOSITORY_DIR, "*tar*")))
+    subprocess.Popen(['rm'] + glob.glob(os.path.join(LOCAL_REPOSITORY_DIR, "*tar*")))
+def clean_db():
+    filename = os.path.join(LOCAL_REPOSITORY_DIR, 'mod.db.tar.gz')
+    if os.path.exists(filename):
+        os.remove(filename)
 
 class RepositoryUpdate(fileserver.FileReceiver):
     """
@@ -66,6 +70,7 @@ class RepositoryUpdate(fileserver.FileReceiver):
 
     def do_callback(self, proc):
         self.result = True
+        clean_db()
         self.file_callback()
 
 
@@ -187,6 +192,7 @@ def run():
     def check():
         check_environment()
 
+    clean_db()
     run_server()
     ioloop.IOLoop.instance().add_callback(check)
     
