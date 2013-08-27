@@ -2,8 +2,8 @@ import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-DOWNLOAD_TMP_DIR = os.path.join(ROOT, 'tmp')
-REPOSITORY_PUBLIC_KEY = os.path.join(ROOT, 'repository.pub')
+DOWNLOAD_TMP_DIR = '/tmp'
+REPOSITORY_PUBLIC_KEY = '/root/keys/cloud_key.pub'
 LOCAL_REPOSITORY_DIR = '/pkgs' 
 HTML_DIR = '/usr/share/mod-pacmanager/html/'
 REPOSITORY_ADDRESS = 'packages.portalmod.com'
