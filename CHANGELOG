@@ -1,3 +1,8 @@
+0.9.3
+=====
+
+  - FIX: remove pacman lock before any action
+
 0.9.2
 =====
 
