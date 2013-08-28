@@ -1,5 +1,10 @@
+0.9.5
+=====
+
+  - FIX: recover from corrupted file
+
 0.9.4
-=======
+=====
 
   - FIX: release
 

@@ -6,6 +6,9 @@ from hashlib import md5
 from . import crypto
 from . import json_handler
 
+class InvalidFile(Exception):
+    pass
+
 class TorrentGenerator(object):
     
     def __init__(self, path, piece_length=None):
@@ -208,12 +211,23 @@ class TorrentReceiver(object):
     def _verify_checksum(self, filename):
         fp = open(filename)
 
-        chk = md5()
-        while fp.tell() < self.length:
-            chk.update(fp.read(2**13))
+        try:
+            chk = md5()
+            while fp.tell() < self.length:
+                data = fp.read(2**13)
+                if len(data) == 0 and fp.tell() < self.length:
+                    # some bizarre error, aparently because corrupted file already exists
+                    # let's at least not hang
+                    assert False
+                chk.update(data)
 
-        assert chk.hexdigest() == self.md5
+            assert chk.hexdigest() == self.md5
+
+        except AssertionError:
+            os.remove(filename)
+            raise InvalidFile(filename)
 
         fp.close()
 
         return True
+
