@@ -29,6 +29,7 @@ def run_command(command, callback):
     Runs a command asynchronously inside a request and calls callback 
     passing subprocess object as parameter when finished
     """
+
     proc = subprocess.Popen(command,
                             stdout=subprocess.PIPE)
     loop = ioloop.IOLoop.instance()
@@ -65,6 +66,7 @@ class RepositoryUpdate(fileserver.FileReceiver):
 
     def process_file(self, data, callback):
         self.file_callback = callback
+        yield gen.Task(run_command, ['rm', '-f', '/var/lib/pacman/db.lck'])
         run_command(['pacman', '-Sy'], 
                     self.do_callback)
 
@@ -95,6 +97,7 @@ class UpgradeDependenciesList(web.RequestHandler):
     @gen.engine
     def get(self):
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+        yield gen.Task(run_command, ['rm', '-f', '/var/lib/pacman/db.lck'])
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Sup'])
         packages = parse_pacman_output(proc.stdout.read())
 
@@ -113,6 +116,7 @@ class PackageDependenciesList(web.RequestHandler):
     @gen.engine
     def get(self, package_name):
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+        yield gen.Task(run_command, ['rm', '-f', '/var/lib/pacman/db.lck'])
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Sp', package_name])
         packages = parse_pacman_output(proc.stdout.read())
 
@@ -131,6 +135,7 @@ class Upgrade(web.RequestHandler):
     @gen.engine
     def get(self):
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+        yield gen.Task(run_command, ['rm', '-f', '/var/lib/pacman/db.lck'])
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Su'])
         clean_repo()
 
@@ -146,6 +151,7 @@ class PackageInstall(web.RequestHandler):
     @gen.engine
     def get(self, package_name):
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+        yield gen.Task(run_command, ['rm', '-f', '/var/lib/pacman/db.lck'])
         proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-S', package_name])
         clean_repo()
         self.write(json.dumps(True))
