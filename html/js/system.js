@@ -28,17 +28,21 @@ function Installer(options) {
 	// The address of the server where packages will be installed. Empty is
 	// ok if the interface is being served by the package server
 	localServer: '',
-	reportStatus: function(status) {}
+	reportStatus: function(status) {},
+	reportError: function(error) { alert(error) },
     }, options)
 
+    // This will transfer the mod.db.tar.gz file to the device. After the 
     this.update = function(callback) {
 	var trans = new Transference(options.repository,
 				     options.localServer + '/system/update',
 				     'mod.db.tar.gz');
 	trans.reportFinished = callback
+	trans.reportError = options.reportError
 	trans.start()
     }
 
+    // Gets list of packages to upgrade and sends it to callback
     this.checkUpgrade = function(callback) {
 	this.update(function() {
 	    $.ajax({
@@ -52,6 +56,36 @@ function Installer(options) {
 	})
     }
 
+    // Downloads a list of packages to server and then calls callback
+    this.downloadQueue = []
+    this.download = function(packages, callback) {
+	self.downloadQueue = packages
+	var totalFiles = packages.length
+	var fileNum = 0
+	var processNext = function() {
+	    if (self.downloadQueue.length == 0) {
+		return callback()
+	    }
+	    var fileName = self.downloadQueue.shift()
+	    fileNum += 1
+	    var trans = new Transference(options.repository,
+					 options.localServer + '/system/package/download',
+					 fileName)
+	    trans.reportFinished = processNext
+	    trans.reportStatus = function(status) {
+		status.totalFiles = totalFiles
+		status.numFile = fileNum
+		status.currentFile = fileName
+		options.reportStatus(status)
+	    }
+	    trans.reportError = options.reportError
+	    trans.start()
+	}
+	processNext()
+    }
+
+    // Do an upgrade. Gets a list of packages, download them and
+    // executes the upgrade when all packages have finished download
     this.upgrade = function(callback) {
 	this.checkUpgrade(function(packages) {
 	    self.download(packages, function() {
@@ -60,6 +94,7 @@ function Installer(options) {
 	})
     }
 
+    // Executes the upgrade, given that all packages have been sent to local server
     this.doUpgrade = function(callback) {
 	$.ajax({
 	    method: 'get',
@@ -92,30 +127,4 @@ function Installer(options) {
 	})
     }
 
-    this.download = function(packages, callback) {
-	self.downloadQueue = packages
-	var totalFiles = packages.length
-	var fileNum = 0
-	var processNext = function() {
-	    if (self.downloadQueue.length == 0) {
-		return callback()
-	    }
-	    var fileName = self.downloadQueue.shift()
-	    fileNum += 1
-	    var trans = new Transference(options.repository,
-					 options.localServer + '/system/package/download',
-					 fileName)
-	    trans.reportFinished = processNext
-	    trans.reportStatus = function(status) {
-		status.totalFiles = totalFiles
-		status.numFile = fileNum
-		status.currentFile = fileName
-		options.reportStatus(status)
-	    }
-	    trans.start()
-	}
-	processNext()
-    }
-
-    this.downloadQueue = []
 }
