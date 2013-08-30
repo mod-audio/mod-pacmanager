@@ -7,73 +7,9 @@ from torrent import TorrentReceiver, TorrentGenerator, GridTorrentGenerator
 from crypto import Receiver
 
 """
-File transfering between Device and Cloud is done by 3 pieces:
-- A FileSender, who will serve the file through HTTP in several json-formatted chunks
-- A FileReceiver, who will take these chunks through HTTP and handle the uploaded file
-- A Transference instance, in JS, that will pass all json chunks from one server to the other
-
-Both the Device and Cloud implement senders and receivers for each kind of file transference.
+This is the modcommon.fileserver.FileReceiver copied from mod-python.
+We do this to avoid the risk of breaking this library during an upgrade of mod-python
 """
-
-class FileSender(tornado.web.RequestHandler):
-
-    @property
-    def private_key(self):
-        """
-        Returns a file path containing the private key used to sign the data
-        """
-        raise NotImplemented
-
-    @property
-    def base_dir(self):
-        raise NotImplemented
-
-    def torrent(self, filename):
-        return TorrentGenerator(os.path.join(self.base_dir, filename))
-
-    @classmethod
-    def urls(cls, path=''):
-        if not path.startswith('/'):
-            path = '/%s' % path
-        if not path.endswith('/'):
-            path = '%s/' % path
-        return [
-            (r"%s([a-z0-9_]+(?=\.[a-z0-9]+)?)$" % path, cls),
-            (r"%s([a-z0-9_]+(?=\.[a-z0-9]+)?)/(\d+)" % path, cls),
-            ]
-
-    def get(self, filename, chunk_number=None):
-        if chunk_number is None:
-            return self.get_torrent(filename)
-        else:
-            return self.get_chunk(filename, int(chunk_number))
-
-    def get_torrent(self, filename):
-        gen = self.torrent(filename)
-        torrent_data = gen.torrent_data(self.private_key)
-        self.set_header('Access-Control-Allow-Origin', self.request.headers['Origin'])
-        self.set_header('Content-type', 'text/plain')
-        self.write(torrent_data)
-
-    def get_chunk(self, filename, chunk_number):
-        gen = self.torrent(filename)
-        self.set_header('Access-Control-Allow-Origin', self.request.headers['Origin'])
-        self.write(gen.get_chunk(chunk_number))
-
-class GridFileSender(FileSender):
-
-    private_key = None
-
-    @property
-    def model(self):
-        """
-        model property must be a cloud.models.FileCollection subclass
-        """
-        raise NotImplemented
-
-    def torrent(self, objectid):
-        return GridTorrentGenerator(self.model(objectid))
-        
 
 class FileReceiver(tornado.web.RequestHandler):
     @property
@@ -96,6 +32,8 @@ class FileReceiver(tornado.web.RequestHandler):
 
     @tornado.web.asynchronous
     def post(self, sessionid=None, chunk_number=None):
+        if self.request.connection.stream.closed():
+            return self.finish()
         self.set_header('Access-Control-Allow-Origin', self.request.headers['Origin'])
         # self.result can be set by subclass in process_file,
         # so that answer will be returned to browser
@@ -184,4 +122,3 @@ class FileReceiver(tornado.web.RequestHandler):
         """
         To be overriden
         """
-

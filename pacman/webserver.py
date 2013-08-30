@@ -24,28 +24,48 @@ from pacman.settings import check_environment
 from pacman.settings import (DOWNLOAD_TMP_DIR, REPOSITORY_PUBLIC_KEY, LOCAL_REPOSITORY_DIR,
                              HTML_DIR, PORT, REPOSITORY_ADDRESS)
 
-def run_command(command, callback):
+def run_pacman(action, package_name=None):
     """
-    Runs a command asynchronously inside a request and calls callback 
-    passing subprocess object as parameter when finished
+    Runs pacman with given parameters.
+    Write its information (pid, command, output, input) to filesystem
+    and hangs this process until it's finished
     """
+    command = ['pacman', '--noconfirm', action]
+    if package_name:
+        command.append(package_name)
+
+    cmd = open('/tmp/pacman.cmd', 'w')
+    out = open('/tmp/pacman.out', 'w')
+    err = open('/tmp/pacman.err', 'w')
+    pid = open('/tmp/pacman.pid', 'w')
+    res = open('/tmp/pacman.res', 'w')
+
+    cmd.write(' '.join(command))
+    cmd.close()
 
     proc = subprocess.Popen(command,
-                            stdout=subprocess.PIPE)
-    loop = ioloop.IOLoop.instance()
-    def check_process(fileno, event):
-        if proc.poll() is None:
-            return
-        loop.remove_handler(fileno)
-            
-        callback(proc)
+                            stdout=out,
+                            stderr=err)
+    pid.write('%d' % proc.pid)
+    pid.close()
 
-    loop.add_handler(proc.stdout.fileno(), check_process, 16)
+    proc.wait()
 
-def parse_pacman_output(output):
+    out.close()
+    err.close()
+
+    result = proc.poll()
+
+    res.write('%d' % result)
+    res.close()
+
+    return result == 0
+
+def parse_pacman_output():
     """
     gets a pacman -S command output and retrieves a list of packages that it would install
     """
+    output = open('/tmp/pacman.out').read()
     return [ re.sub(r'.*://.*/', '', line) 
              for line in output.split() if "://" in line ]
 
@@ -70,11 +90,7 @@ class RepositoryUpdate(fileserver.FileReceiver):
 
     def process_file(self, data, callback):
         self.file_callback = callback
-        remove_lock()
-        run_command(['pacman', '-Sy'], 
-                    self.do_callback)
-
-    def do_callback(self, proc):
+        run_pacman('-Sy')
         self.result = True
         clean_db()
         self.file_callback()
@@ -97,72 +113,87 @@ class UpgradeDependenciesList(web.RequestHandler):
     Based on local repository database, gets a list of all packages that are needed for upgrading installed packages
     (may include new dependencies)
     """
-    @web.asynchronous
-    @gen.engine
     def get(self):
+        if self.request.connection.stream.closed():
+            return
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
-        remove_lock()
-        proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Sup'])
-        packages = parse_pacman_output(proc.stdout.read())
+        result = run_pacman('-Sup')
+        packages = parse_pacman_output() if result else []
 
         if len(packages) == 0:
             clean_repo()
         
         self.write(json.dumps(packages))
-        self.finish()
 
 class PackageDependenciesList(web.RequestHandler):
     """
     Given a package, returns a list of all files that are needed to download (including the package itself
     and dependencies) to install it
     """
-    @web.asynchronous
-    @gen.engine
+
     def get(self, package_name):
+        if self.request.connection.stream.closed():
+            return
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
-        remove_lock()
-        proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Sp', package_name])
-        packages = parse_pacman_output(proc.stdout.read())
+        result = run_pacman('-Sp', package_name)
+        packages = parse_pacman_output() if result else []
 
         if len(packages) == 0:
             clean_repo()
         
         self.write(json.dumps(packages))
-        self.finish()
 
 class Upgrade(web.RequestHandler):
     """
     Given that repository is updated and all new packages have been downloaded, upgraded
     all packages.
     """
-    @web.asynchronous
-    @gen.engine
     def get(self):
+        if self.request.connection.stream.closed():
+            return
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
-        remove_lock()
-        proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-Su'])
+        result = run_pacman('-Su')
         clean_repo()
 
-        self.write(json.dumps(True))
-        self.finish()
+        self.write(json.dumps(result))
 
 class PackageInstall(web.RequestHandler):
     """
     Given that all necessary files have been downloaded to local repository,
     install a package
     """
-    @web.asynchronous
-    @gen.engine
     def get(self, package_name):
+        if self.request.connection.stream.closed():
+            return
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
-        remove_lock()
-        proc = yield gen.Task(run_command, ['pacman', '--noconfirm', '-S', package_name])
+        result = run_pacman('-S', package_name)
         clean_repo()
-        self.write(json.dumps(True))
-        self.finish()
+        self.write(json.dumps(result))
+
+class LastResult(web.RequestHandler):
+    """
+    Since the pacman may block execution for a very long time,
+    this handler provides a method for browser to know the result of
+    the last pacman execution once it has ended, so that it can recover from
+    an HTTP timeout.
+    Returns boolean json
+    """
+    def get(self):
+        if self.request.connection.stream.closed():
+            return
+        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+        result = open('/tmp/pacman.res').read()
+        if len(result) == 0:
+            # Something is really wrong, probably another process has messed with our result
+            result = False
+        else:
+            result = int(result) == 0
+        self.write(json.dumps(result))
 
 class TemplateHandler(web.RequestHandler):
     def get(self, path):
+        if self.request.connection.stream.closed():
+            return
         if not path:
             path = 'index.html'
         loader = template.Loader(HTML_DIR)
