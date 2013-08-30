@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json, subprocess, re, glob
-import os
+import os, sys
 from tornado import web, gen, ioloop, options, template
 from pacman import fileserver
 from pacman.settings import check_environment
@@ -30,6 +30,7 @@ def run_pacman(action, package_name=None):
     Write its information (pid, command, output, input) to filesystem
     and hangs this process until it's finished
     """
+    remove_lock()
     command = ['pacman', '--noconfirm', action]
     if package_name:
         command.append(package_name)
@@ -75,10 +76,31 @@ def clean_db():
     filename = os.path.join(LOCAL_REPOSITORY_DIR, 'mod.db.tar.gz')
     if os.path.exists(filename):
         os.remove(filename)
+
 def remove_lock():
-    filename = '/var/lib/pacman/db.lck'
-    if os.path.exists(filename):
-        os.remove(filename)
+    lockfile = '/var/lib/pacman/db.lck'
+    if not os.path.exists(lockfile):
+        return
+    pidfile = '/tmp/pacman.pid'
+    if not os.path.exists(pidfile)
+        os.remove(lockfile)
+        return
+    pid = open('/tmp/pacman.pid').read().strip()
+    try:
+        pid = int(pid)
+    except ValueError:
+        os.remove(lockfile)
+        return
+
+    if os.path.exists('/proc/%d' % pid):
+        # process is running
+        # Something is really wrong. Let's just not take the risk to
+        # cause a disaster by running pacman commands without knowing what's
+        # happening. Let the user take the decision to reboot at worst case.
+        time.sleep(1)
+        sys.exit(1)
+    os.remove(lockfile)
+
 
 class RepositoryUpdate(fileserver.FileReceiver):
     """
