@@ -24,7 +24,7 @@ function Installer(options) {
 
     options = $.extend({
 	// This is usually defined, but let's have it hardcoded here anyway
-	repository: 'http://packages.portalmod.com/api', 
+	repository: REPOSITORY, 
 	// The address of the server where packages will be installed. Empty is
 	// ok if the interface is being served by the package server
 	localServer: '',
