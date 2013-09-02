@@ -55,9 +55,11 @@ function reportInstallationStatus(status) {
 }
 
 function startDownload() {
+    $('#progressbar').width(0)
     $('#actions').hide()
     $('#progress').show()
     $('#download-info').hide()
+    $('#download-installing').hide()
     $('#download-start').show()
 }
 

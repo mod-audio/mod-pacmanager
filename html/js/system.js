@@ -51,6 +51,9 @@ function Installer(options) {
 		success: function(packages) {
 		    callback(packages)
 		},
+		error: function(resp) {
+		    options.reportError(resp)
+		},
 		dataType: 'json'
 	    })
 	})
@@ -140,7 +143,6 @@ function Installer(options) {
      * on timeouts
      */
     this.getResult = function(callback) {
-	console.log('timeout')
 	$.ajax({
 	    method: 'get',
 	    url: options.localServer + '/system/result',
