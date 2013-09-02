@@ -1,3 +1,6 @@
+settings_local.py
+fake_pacman
+
 *.py[cod]
 
 # C extensions

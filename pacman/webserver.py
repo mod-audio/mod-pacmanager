@@ -22,7 +22,7 @@ from pacman import fileserver
 from pacman.settings import check_environment
 
 from pacman.settings import (DOWNLOAD_TMP_DIR, REPOSITORY_PUBLIC_KEY, LOCAL_REPOSITORY_DIR,
-                             HTML_DIR, PORT, REPOSITORY_ADDRESS)
+                             HTML_DIR, PORT, REPOSITORY_ADDRESS, PACMAN_COMMAND)
 
 def run_pacman(action, package_name=None):
     """
@@ -31,7 +31,7 @@ def run_pacman(action, package_name=None):
     and hangs this process until it's finished
     """
     remove_lock()
-    command = ['pacman', '--noconfirm', action]
+    command = [PACMAN_COMMAND, '--noconfirm', action]
     if package_name:
         command.append(package_name)
 
@@ -64,14 +64,16 @@ def run_pacman(action, package_name=None):
 
 def parse_pacman_output():
     """
-    gets a pacman -S command output and retrieves a list of packages that it would install
+    Gets a pacman -S command output and retrieves a list of packages that it would install
     """
     output = open('/tmp/pacman.out').read()
     return [ re.sub(r'.*://.*/', '', line) 
              for line in output.split() if "://" in line ]
 
 def clean_repo():
-    subprocess.Popen(['rm'] + glob.glob(os.path.join(LOCAL_REPOSITORY_DIR, "*tar*")))
+    filelist = glob.glob(os.path.join(LOCAL_REPOSITORY_DIR, "*tar*"))
+    if len(filelist):
+        subprocess.Popen(['rm'] + filelist)
 def clean_db():
     filename = os.path.join(LOCAL_REPOSITORY_DIR, 'mod.db.tar.gz')
     if os.path.exists(filename):
@@ -82,7 +84,7 @@ def remove_lock():
     if not os.path.exists(lockfile):
         return
     pidfile = '/tmp/pacman.pid'
-    if not os.path.exists(pidfile)
+    if not os.path.exists(pidfile):
         os.remove(lockfile)
         return
     pid = open('/tmp/pacman.pid').read().strip()
@@ -135,6 +137,8 @@ class UpgradeDependenciesList(web.RequestHandler):
     Based on local repository database, gets a list of all packages that are needed for upgrading installed packages
     (may include new dependencies)
     """
+    # @web.asynchronous avoids automatic finish() call on a closed stream
+    @web.asynchronous
     def get(self):
         if self.request.connection.stream.closed():
             return
@@ -145,14 +149,18 @@ class UpgradeDependenciesList(web.RequestHandler):
         if len(packages) == 0:
             clean_repo()
         
+        if self.request.connection.stream.closed():
+            return
         self.write(json.dumps(packages))
+        self.finish()
 
 class PackageDependenciesList(web.RequestHandler):
     """
     Given a package, returns a list of all files that are needed to download (including the package itself
     and dependencies) to install it
     """
-
+    # @web.asynchronous avoids automatic finish() call on a closed stream
+    @web.asynchronous 
     def get(self, package_name):
         if self.request.connection.stream.closed():
             return
@@ -163,34 +171,46 @@ class PackageDependenciesList(web.RequestHandler):
         if len(packages) == 0:
             clean_repo()
         
+        if self.request.connection.stream.closed():
+            return
         self.write(json.dumps(packages))
+        self.finish()
 
 class Upgrade(web.RequestHandler):
     """
-    Given that repository is updated and all new packages have been downloaded, upgraded
+    Given that repository is updated and all new packages have been downloaded, upgrade
     all packages.
     """
+    # @web.asynchronous avoids automatic finish() call on a closed stream
+    @web.asynchronous 
     def get(self):
         if self.request.connection.stream.closed():
             return
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
         result = run_pacman('-Su')
         clean_repo()
-
+        if self.request.connection.stream.closed():
+            return
         self.write(json.dumps(result))
+        self.finish()
 
 class PackageInstall(web.RequestHandler):
     """
     Given that all necessary files have been downloaded to local repository,
     install a package
     """
+    # @web.asynchronous avoids automatic finish() call on a closed stream
+    @web.asynchronous 
     def get(self, package_name):
         if self.request.connection.stream.closed():
             return
         self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
         result = run_pacman('-S', package_name)
         clean_repo()
+        if self.request.connection.stream.closed():
+            return
         self.write(json.dumps(result))
+        self.finish()
 
 class LastResult(web.RequestHandler):
     """
@@ -200,6 +220,8 @@ class LastResult(web.RequestHandler):
     an HTTP timeout.
     Returns boolean json
     """
+    # @web.asynchronous avoids automatic finish() call on a closed stream
+    @web.asynchronous 
     def get(self):
         if self.request.connection.stream.closed():
             return
@@ -210,7 +232,10 @@ class LastResult(web.RequestHandler):
             result = False
         else:
             result = int(result) == 0
+        if self.request.connection.stream.closed():
+            return
         self.write(json.dumps(result))
+        self.finish()
 
 class TemplateHandler(web.RequestHandler):
     def get(self, path):
@@ -240,6 +265,7 @@ application = web.Application(
         (r"/system/upgrade/?$", Upgrade),
         (r"/system/package/dependencies/(.+)/?$", PackageDependenciesList),
         (r"/system/package/install/(.+)/?$", PackageInstall),
+        (r"/system/result/?$", LastResult),
         (r"/([a-z]+\.html)?$", TemplateHandler),
         
         (r"/(.*)", web.StaticFileHandler, {"path": HTML_DIR}),

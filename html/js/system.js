@@ -32,7 +32,7 @@ function Installer(options) {
 	reportError: function(error) { alert(error) },
     }, options)
 
-    // This will transfer the mod.db.tar.gz file to the device. After the 
+    // This will transfer the mod.db.tar.gz file to the device.
     this.update = function(callback) {
 	var trans = new Transference(options.repository,
 				     options.localServer + '/system/update',
@@ -100,6 +100,10 @@ function Installer(options) {
 	    method: 'get',
 	    url: options.localServer + '/system/upgrade',
 	    success: callback,
+	    error: function(resp) {
+		if (resp.statusText == 'timeout')
+		    return self.getResult(callback)
+	    }	    
 	})
     }
 
@@ -123,8 +127,28 @@ function Installer(options) {
 	$.ajax({
 	    method: 'get',
 	    url: options.localServer + '/system/package/install/'+packageName,
-	    success: callback
+	    success: callback,
+	    error: function(resp) {
+		if (resp.statusText == 'timeout')
+		    return self.getResult(callback)
+	    }	    
 	})
     }
 
+    /* Gets the result of last execution, in case it has timed out. 
+     * Pacman command may take a long time, so this method will keep trying
+     * on timeouts
+     */
+    this.getResult = function(callback) {
+	console.log('timeout')
+	$.ajax({
+	    method: 'get',
+	    url: options.localServer + '/system/result',
+	    success: callback,
+	    error: function(resp) {
+		if (resp.statusText == 'timeout')
+		    return self.getResult(callback)
+	    }
+	})
+    }
 }

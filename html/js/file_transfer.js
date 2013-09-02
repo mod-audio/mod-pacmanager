@@ -25,9 +25,14 @@ function Transference(from, to, filename) {
     var self = this
 
     this.start = function() {
-	var req = $.get(self.origin + self.file,
-			self.registerUpload,
-			'json')
+	var req = $.ajax({ type: 'GET',
+			   url: self.origin + self.file,
+			   success: self.registerUpload,
+			   dataType: 'json',
+			   error: function(resp) {
+			       self.abort(resp.statusText)
+			   }
+			 })
 	self.requests.push(req)
     }
     
@@ -37,7 +42,7 @@ function Transference(from, to, filename) {
 			   'data': JSON.stringify(torrent),
 			   'success': self.queueChunks,
 			   'dataType': 'json',
-			   'error': function(resp) { 
+			   'error': function(resp) {
 			       self.abort(resp.statusText)
 			   }
 			 })

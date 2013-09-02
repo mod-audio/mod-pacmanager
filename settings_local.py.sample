@@ -1,0 +1,5 @@
+
+settings.REPOSITORY_PUBLIC_KEY = '/home/%s/devel/mod-ui/keys/cloud_key.pub' % os.environ['USER']
+settings.LOCAL_REPOSITORY_DIR = '/tmp' 
+settings.HTML_DIR = os.path.join(ROOT, 'html')
+settings.PACMAN_COMMAND = os.path.join(ROOT, 'fake_pacman')
