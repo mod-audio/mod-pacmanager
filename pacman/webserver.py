@@ -78,6 +78,11 @@ def clean_db():
     filename = os.path.join(LOCAL_REPOSITORY_DIR, 'mod.db.tar.gz')
     if os.path.exists(filename):
         os.remove(filename)
+def restart_services():
+    def restart():
+        subprocess.Popen(['systemctl', 'restart', 'mod-ui.service']).wait()
+        sys.exit(0)
+    ioloop.IOLoop.instance().add_callback(restart)
 
 def remove_lock():
     lockfile = '/var/lib/pacman/db.lck'
@@ -194,6 +199,7 @@ class Upgrade(BasePacmanRunner):
     def pacman_process(self, package_name):
         result = run_pacman('-Su')
         clean_repo()
+        restart_services()
         return result
 
 class PackageInstall(BasePacmanRunner):
@@ -204,6 +210,7 @@ class PackageInstall(BasePacmanRunner):
     def pacman_process(self, package_name):
         result = run_pacman('-S', package_name)
         clean_repo()
+        restart_services()
         return result
 
 class LastResult(BasePacmanRunner):
