@@ -132,87 +132,81 @@ class PackageDownload(fileserver.FileReceiver):
         self.result = True
         callback()
 
-class UpgradeDependenciesList(web.RequestHandler):
+class BasePacmanRunner(web.RequestHandler):
+    """
+    This is a base web request handler that will:
+
+    - make sure connection has not been closed when request starts
+      ( this is very likely, since each pacman execution blocks everything )
+
+    - set the Access-Control-Allow-Origin header, to allow the mod-ui server to access this one
+
+    - call pacman_process, that will actually do what's needed
+
+    - check again the connection, that might have been closed during pacman execution
+
+    - write result and finish
+    """
+    @web.asynchronous # avoid automatic finish() call, that might be done in a closed connection
+    def get(self, package_name=None):
+        if self.request.connection.stream.closed():
+            return
+        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+        result = self.pacman_process(package_name)
+        if self.request.connection.stream.closed():
+            return
+        self.write(json.dumps(result))
+        self.finish()
+
+class UpgradeDependenciesList(BasePacmanRunner):
     """
     Based on local repository database, gets a list of all packages that are needed for upgrading installed packages
     (may include new dependencies)
     """
-    # @web.asynchronous avoids automatic finish() call on a closed stream
-    @web.asynchronous
-    def get(self):
-        if self.request.connection.stream.closed():
-            return
-        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+    def pacman_process(self, package_name):
         result = run_pacman('-Sup')
         packages = parse_pacman_output() if result else []
 
         if len(packages) == 0:
             clean_repo()
         
-        if self.request.connection.stream.closed():
-            return
-        self.write(json.dumps(packages))
-        self.finish()
+        return packages
 
-class PackageDependenciesList(web.RequestHandler):
+class PackageDependenciesList(BasePacmanRunner):
     """
     Given a package, returns a list of all files that are needed to download (including the package itself
     and dependencies) to install it
     """
-    # @web.asynchronous avoids automatic finish() call on a closed stream
-    @web.asynchronous 
-    def get(self, package_name):
-        if self.request.connection.stream.closed():
-            return
-        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+    def pacman_process(self, package_name):
         result = run_pacman('-Sp', package_name)
         packages = parse_pacman_output() if result else []
 
         if len(packages) == 0:
             clean_repo()
         
-        if self.request.connection.stream.closed():
-            return
-        self.write(json.dumps(packages))
-        self.finish()
+        return packages
 
-class Upgrade(web.RequestHandler):
+class Upgrade(BasePacmanRunner):
     """
     Given that repository is updated and all new packages have been downloaded, upgrade
     all packages.
     """
-    # @web.asynchronous avoids automatic finish() call on a closed stream
-    @web.asynchronous 
-    def get(self):
-        if self.request.connection.stream.closed():
-            return
-        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+    def pacman_process(self, package_name):
         result = run_pacman('-Su')
         clean_repo()
-        if self.request.connection.stream.closed():
-            return
-        self.write(json.dumps(result))
-        self.finish()
+        return result
 
-class PackageInstall(web.RequestHandler):
+class PackageInstall(BasePacmanRunner):
     """
     Given that all necessary files have been downloaded to local repository,
     install a package
     """
-    # @web.asynchronous avoids automatic finish() call on a closed stream
-    @web.asynchronous 
-    def get(self, package_name):
-        if self.request.connection.stream.closed():
-            return
-        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+    def pacman_process(self, package_name):
         result = run_pacman('-S', package_name)
         clean_repo()
-        if self.request.connection.stream.closed():
-            return
-        self.write(json.dumps(result))
-        self.finish()
+        return result
 
-class LastResult(web.RequestHandler):
+class LastResult(BasePacmanRunner):
     """
     Since the pacman may block execution for a very long time,
     this handler provides a method for browser to know the result of
@@ -220,22 +214,14 @@ class LastResult(web.RequestHandler):
     an HTTP timeout.
     Returns boolean json
     """
-    # @web.asynchronous avoids automatic finish() call on a closed stream
-    @web.asynchronous 
-    def get(self):
-        if self.request.connection.stream.closed():
-            return
-        self.set_header('Access-Control-Allow-Origin', self.request.headers.get('Origin', ''))
+    def pacman_process(self, package_name):
         result = open('/tmp/pacman.res').read()
         if len(result) == 0:
             # Something is really wrong, probably another process has messed with our result
             result = False
         else:
             result = int(result) == 0
-        if self.request.connection.stream.closed():
-            return
-        self.write(json.dumps(result))
-        self.finish()
+        return result
 
 class TemplateHandler(web.RequestHandler):
     def get(self, path):
