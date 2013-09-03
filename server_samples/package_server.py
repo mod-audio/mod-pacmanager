@@ -25,6 +25,9 @@ class PackageSender(fileserver.FileSender):
     # The packages directory, by default "packages/" in same directory of this file
     base_dir = os.path.join(ROOT, 'packages/')
 
+    # The cache directory, optional, by defaul "cache/" in same directory of this file
+    cache_dir = os.path.join(ROOT, 'cache/')
+
 application = tornado.web.Application(PackageSender.urls(URI))
 application.listen(PORT, address=ADDRESS)
 tornado.options.parse_command_line()
