@@ -10,7 +10,7 @@ if os.path.exists("/root/repository"):
     REPOSITORY_ADDRESS = fh.read().strip()
     fh.close()
 else:
-    REPOSITORY_ADDRESS = 'packages.portalmod.com'
+    REPOSITORY_ADDRESS = 'http://packages.portalmod.com/api'
 
 PORT = 8889
 PACMAN_COMMAND = 'pacman'
