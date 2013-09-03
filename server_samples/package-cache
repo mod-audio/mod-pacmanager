@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+#
+# This script will automatically populate a fileserver cache, so that it
+# can be served directly from nginx without needing a fileserver.FileServer instance
+#
+# It's supposed to be inside the packages directory, together with repo-add and repo-remove
+
+import os, sys, json
+from modcommon.communication.torrent import TorrentGenerator
+
+ROOT = os.path.dirname(os.path.realpath(__file__))
+CACHE_DIR = os.path.join(ROOT, 'cache')
+PRIVATE_KEY = '/PATH/TO/YOUR/PRIVATE/KEY'
+
+if not os.path.exists(CACHE_DIR):
+    os.mkdir(CACHE_DIR)
+    
+def cache(filename):
+    assert os.path.exists(filename)
+
+    gen = TorrentGenerator(filename)
+    filename = os.path.basename(filename)
+
+    torrent_file = os.path.join(CACHE_DIR, '%s.torrent' % filename)
+    torrent_data = gen.torrent_data(PRIVATE_KEY)
+    open(torrent_file, 'w').write(torrent_data)
+
+    torrent = json.loads(torrent_data)
+    for i, checksum in enumerate(torrent['pieces']):
+        chunk_file = os.path.join(CACHE_DIR, '%s.%d' % (filename, i))
+        chunk_data = gen.get_chunk(i)
+        open(chunk_file, 'w').write(chunk_data)
+
+for filename in sys.argv[1:]:
+    cache(filename)
