@@ -1,3 +1,10 @@
+0.9.7
+====
+
+  - NEW: synchronous webserver 
+  - NEW: repository configuration 
+  - FIX: better feedback when downloading packages
+
 0.9.6
 =====
 
