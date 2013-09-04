@@ -28,8 +28,11 @@ function Installer(options) {
 	// The address of the server where packages will be installed. Empty is
 	// ok if the interface is being served by the package server
 	localServer: '',
+	maxConnections: 6,
 	reportStatus: function(status) {},
-	reportError: function(error) { alert(error) },
+	reportError: function(error) { 
+	    alert(error) 
+	},
     }, options)
 
     // This will transfer the mod.db.tar.gz file to the device.
@@ -37,6 +40,7 @@ function Installer(options) {
 	var trans = new Transference(options.repository,
 				     options.localServer + '/system/update',
 				     'mod.db.tar.gz');
+	trans.maxConnections = options.maxConnections
 	trans.reportFinished = callback
 	trans.reportError = options.reportError
 	trans.start()
@@ -74,6 +78,7 @@ function Installer(options) {
 	    var trans = new Transference(options.repository,
 					 options.localServer + '/system/package/download',
 					 fileName)
+	    trans.maxConnections = options.maxConnections
 	    trans.reportFinished = processNext
 	    trans.reportStatus = function(status) {
 		status.totalFiles = totalFiles

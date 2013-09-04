@@ -1,9 +1,9 @@
 $(document).ready(function() {
-
     $('#upgrade-needed button').click(function() {
 	var installer = new Installer({
 	    repository: REPOSITORY,
-	    reportStatus: reportInstallationStatus
+	    reportStatus: reportInstallationStatus,
+	    maxConnections: 8
 	})
 	startDownload()
 	installer.upgrade(endDownload)

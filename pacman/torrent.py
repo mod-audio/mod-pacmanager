@@ -27,7 +27,7 @@ class TorrentGenerator(object):
         # - The metadata package cannot be bigger than a chunk package
         # - Each chunk adds 36 bytes to metadata (torrent) file
 
-        min_pow = 16 # 64K
+        min_pow = 17 # 128K
         max_pow = 19 # 512K
         for i in range(min_pow, max_pow):
             if size < 2 ** (2 * i) / 36:
