@@ -31,7 +31,7 @@ def run_pacman(action, package_name=None):
     and hangs this process until it's finished
     """
     remove_lock()
-    command = [PACMAN_COMMAND, '--noconfirm', action]
+    command = [PACMAN_COMMAND, '--noconfirm', '--force', action]
     if package_name:
         command.append(package_name)
 
