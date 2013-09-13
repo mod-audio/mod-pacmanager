@@ -67,7 +67,8 @@ function endDownload() {
     $('#progress').hide()
     $('.state').hide()
     $('#actions').show()
-    checkState()
+    // Let's give some time for the pacmanager to be restarted
+    setTimeout(checkState, 2500)
 }
 
 function setState(state) {
