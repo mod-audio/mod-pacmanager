@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json, subprocess, re, glob
+import json, subprocess, re, glob, time
 import os, sys
 from tornado import web, gen, ioloop, options, template
 from pacman import fileserver
@@ -82,7 +82,7 @@ def restart_services():
     def restart():
         subprocess.Popen(['systemctl', 'restart', 'mod-ui.service']).wait()
         sys.exit(0)
-    ioloop.IOLoop.instance().add_callback(restart)
+    ioloop.IOLoop.instance().add_timeout(time.time()+0.5, restart)
 
 def remove_lock():
     lockfile = '/var/lib/pacman/db.lck'
