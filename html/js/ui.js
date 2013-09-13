@@ -67,7 +67,8 @@ function endDownload() {
     $('#progress').hide()
     $('.state').hide()
     $('#actions').show()
-    checkState()
+    // Give server some time to restart
+    setTimeout(checkState, 2500)
 }
 
 function setState(state) {
