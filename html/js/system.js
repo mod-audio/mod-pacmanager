@@ -30,8 +30,12 @@ function Installer(options) {
 	localServer: '',
 	maxConnections: 6,
 	reportStatus: function(status) {},
-	reportError: function(error) { 
-	    alert(error) 
+	reportError: function(error) {
+        if (console) { 
+            if (console.hasOwnProperty("log")) {
+         	    console.log(error)
+            }
+        }
 	},
     }, options)
 
