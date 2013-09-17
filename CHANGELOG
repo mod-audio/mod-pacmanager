@@ -1,3 +1,8 @@
+0.9.11.1
+========
+
+  - FIX: changes the error alert() for network errors to a console.log() call 
+ 
 0.9.11
 ======
 
