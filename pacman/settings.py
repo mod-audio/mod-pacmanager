@@ -4,6 +4,7 @@ DOWNLOAD_TMP_DIR = '/tmp'
 REPOSITORY_PUBLIC_KEY = '/root/keys/cloud_key.pub'
 LOCAL_REPOSITORY_DIR = '/pkgs' 
 HTML_DIR = '/usr/share/mod-pacmanager/html/'
+IHM_RESET_SCRIPT = '/root/reset.py'
 
 if os.path.exists("/root/repository"):
     fh = open("/root/repository")

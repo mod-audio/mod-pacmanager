@@ -22,7 +22,7 @@ from pacman import fileserver
 from pacman.settings import check_environment
 
 from pacman.settings import (DOWNLOAD_TMP_DIR, REPOSITORY_PUBLIC_KEY, LOCAL_REPOSITORY_DIR,
-                             HTML_DIR, PORT, REPOSITORY_ADDRESS, PACMAN_COMMAND)
+                             HTML_DIR, PORT, REPOSITORY_ADDRESS, PACMAN_COMMAND, IHM_RESET_SCRIPT)
 
 def run_pacman(action, package_name=None):
     """
@@ -249,6 +249,21 @@ class TemplateHandler(web.RequestHandler):
         context = {}
         return context
 
+class DemoReset(web.RequestHandler):
+    """
+    This is used for expomusic demo. It resets the IHM in case of hanging
+    """
+    def get(self):
+        if not IHM_RESET_SCRIPT or not os.path.exists(IHM_RESET_SCRIPT):
+            self.write("IHM reset disabled")
+            return
+        proc = subprocess.Popen(IHM_RESET_SCRIPT.split())
+        proc.wait()
+        if proc.poll() == 0:
+            self.write("IHM reset ok")
+        else:
+            self.write("IHM script returned %d" % proc.poll())
+
 
 application = web.Application(
     RepositoryUpdate.urls('system/update') + 
@@ -260,6 +275,8 @@ application = web.Application(
         (r"/system/package/install/(.+)/?$", PackageInstall),
         (r"/system/result/?$", LastResult),
         (r"/([a-z]+\.html)?$", TemplateHandler),
+
+        (r"/demo/reset/?$", DemoReset),
         
         (r"/(.*)", web.StaticFileHandler, {"path": HTML_DIR}),
         ],
