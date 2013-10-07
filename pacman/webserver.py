@@ -74,6 +74,9 @@ def clean_repo():
     filelist = glob.glob(os.path.join(LOCAL_REPOSITORY_DIR, "*tar*"))
     if len(filelist):
         subprocess.Popen(['rm'] + filelist)
+    # cleans the cache dir
+    run_pacman('-Sc')
+
 def clean_db():
     filename = os.path.join(LOCAL_REPOSITORY_DIR, 'mod.db.tar.gz')
     if os.path.exists(filename):
