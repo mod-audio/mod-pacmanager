@@ -21,6 +21,18 @@ $(document).ready(function() {
 	installer.install(packageName, endDownload)
     })
 
+    $('#reset button').click(function() {
+	$.ajax({ url: '/demo/reset',
+		 success: function(message) {
+		     $('#reset .result').text(message)
+		     setTimeout(function() {
+			 $('#reset .result').text('')
+		     }, 1500)
+		 },
+		 dataType: 'text'
+	       })
+    })
+
     checkState()
 })
 
