@@ -180,19 +180,19 @@ class BasePacmanRunner(web.RequestHandler):
 
 class ServiceStop(web.RequestHandler):
     def get(self):
-        service = self.request.query_arguments.get("service")[0]
+        service = self.get_argument("service")
         run_systemctl_command('stop', service=service)
         self.redirect("/")
 
 class ServiceStart(web.RequestHandler):
     def get(self):
-        service = self.request.query_arguments.get("service")[0]
+        service = self.get_argument("service")
         run_systemctl_command('start', service=service)
         self.redirect("/")
 
 class ServiceRestart(web.RequestHandler):
     def get(self):
-        service = self.request.query_arguments.get("service")[0]
+        service = self.get_argument("service")
         run_systemctl_command('restart', service=service)
         self.redirect("/")
 

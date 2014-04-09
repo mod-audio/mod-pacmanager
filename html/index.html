@@ -15,7 +15,7 @@
     </script>
 </head>
 <body>
-  <div id="actions">
+  <div id="actions" style="float: left; width: 49%; display: none;">
     <div id="install">
       Install package: <input /><button id="install">install</button>
     </div>
@@ -28,7 +28,7 @@
       System is up-to-date
     </div>
   </div>
-  <div id="progress">
+  <div id="progress" style="float: left; width: 49%;">
     <div id="download-info" class="download-action hidden">
       <div id="downloading-file">Downloading <span id="filename"></span> (<span id="file-number"></span>/<span id="total-files"></span>)</div>
     </div>
@@ -36,7 +36,7 @@
     <div id="download-installing" class="download-action hidden">Installing packages...</div>
     <div id="progressbar-wrapper"><div id="progressbar"></div></div>
   </div>
-  <div id="service-status" style="floath: right; border-left: solid 1px; width: 49%;">
+  <div id="service-status" style="float: right; border-left: solid 1px; width: 49%; padding-left: 20px;">
     <h1>Services</h1>
     <table style="width: 500px; text-align: center;">
         <tr><th>Service:</th><th>Status</th><th>Commands</th></tr>
