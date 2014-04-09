@@ -42,9 +42,9 @@ def change_repo(repo):
         pass
 
 def change_cloud(cloud):
-    url = "http://cloud.portalmod.com/api/"
+    url = "http://cloud.portalmod.com/"
     if cloud == "testing":
-        url = "http://packages-testing.portalmod.com/api/"
+        url = "http://cloud-testing.portalmod.com/"
     try:
         fh = open("/root/cloud", "w")
         fh.write(url)
