@@ -1,3 +1,7 @@
+body {
+    margin: 20px;
+}
+
 .state, .hidden {
     display: none;
 }
@@ -33,6 +37,10 @@
     background-color: #8888ff;
     width: 0;
     height: 100%;
+}
+
+#reset {
+    margin-top: 70px;
 }
 
 
