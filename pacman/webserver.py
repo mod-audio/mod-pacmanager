@@ -24,6 +24,23 @@ from pacman.settings import check_environment
 from pacman.settings import (DOWNLOAD_TMP_DIR, REPOSITORY_PUBLIC_KEY, LOCAL_REPOSITORY_DIR,
                              HTML_DIR, PORT, REPOSITORY_ADDRESS, PACMAN_COMMAND, IHM_RESET_SCRIPT)
 
+
+def change_repo(repo):
+    global REPOSITORY_ADDRESS
+    url = "http://packages.portalmod.com/api/"
+    if repo == "testing":
+        url = "http://packages-testing.portalmod.com/api/"
+    elif repo == "homolog":
+        url = "http://packages-homologation.portalmod.com/api/"
+    REPOSITORY_ADDRESS = url
+    try:
+        fh = open("/root/repository", "w")
+        fh.write(url)
+        fh.close()
+    except IOError:
+        # can't open/create file
+        pass
+
 def get_systemd_status(service):
     command = ['systemctl', 'status', service]
     sp = subprocess.Popen(command, stdout=subprocess.PIPE)
@@ -196,6 +213,12 @@ class ServiceRestart(web.RequestHandler):
         run_systemctl_command('restart', service=service)
         self.redirect("/")
 
+class RepositoryChange(web.RequestHandler):
+    def get(self):
+        repository = self.get_argument("repo")
+        change_repo(repository)
+        self.redirect("/")
+
 class UpgradeDependenciesList(BasePacmanRunner):
     """
     Based on local repository database, gets a list of all packages that are needed for upgrading installed packages
@@ -313,6 +336,7 @@ application = web.Application(
         (r"/system/stop/?$", ServiceStop),
         (r"/system/start/?$", ServiceStart),
         (r"/system/restart/?$", ServiceRestart),
+        (r"/system/repository/?$", RepositoryChange),
         (r"/([a-z]+\.html)?$", TemplateHandler),
 
         (r"/demo/reset/?$", DemoReset),
