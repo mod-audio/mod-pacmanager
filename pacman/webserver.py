@@ -6,12 +6,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -23,6 +23,18 @@ from pacman.settings import check_environment
 
 from pacman.settings import (DOWNLOAD_TMP_DIR, REPOSITORY_PUBLIC_KEY, LOCAL_REPOSITORY_DIR,
                              HTML_DIR, PORT, REPOSITORY_ADDRESS, PACMAN_COMMAND, IHM_RESET_SCRIPT)
+
+def get_systemd_status(service):
+    command = ['systemctl', 'status', service]
+    sp = subprocess.Popen(command, stdout=subprocess.PIPE)
+    sp.wait()
+    output = sp.stdout.readlines()
+    status = [line for line in output if line.strip().startswith("Active")]
+    status = status[0].strip().split("Active:")[1].strip()
+    return status
+
+def run_systemctl_command(command, service):
+    return subprocess.call(['systemctl', command, service])
 
 def run_pacman(action, package_name=None):
     """
@@ -67,7 +79,7 @@ def parse_pacman_output():
     Gets a pacman -S command output and retrieves a list of packages that it would install
     """
     output = open('/tmp/pacman.out').read()
-    return [ re.sub(r'.*://.*/', '', line) 
+    return [ re.sub(r'.*://.*/', '', line)
              for line in output.split() if "://" in line ]
 
 def clean_repo():
@@ -166,6 +178,24 @@ class BasePacmanRunner(web.RequestHandler):
         self.write(json.dumps(result))
         self.finish()
 
+class ServiceStop(web.RequestHandler):
+    def get(self):
+        service = self.request.query_arguments.get("service")[0]
+        run_systemctl_command('stop', service=service)
+        self.redirect("/")
+
+class ServiceStart(web.RequestHandler):
+    def get(self):
+        service = self.request.query_arguments.get("service")[0]
+        run_systemctl_command('start', service=service)
+        self.redirect("/")
+
+class ServiceRestart(web.RequestHandler):
+    def get(self):
+        service = self.request.query_arguments.get("service")[0]
+        run_systemctl_command('restart', service=service)
+        self.redirect("/")
+
 class UpgradeDependenciesList(BasePacmanRunner):
     """
     Based on local repository database, gets a list of all packages that are needed for upgrading installed packages
@@ -177,7 +207,7 @@ class UpgradeDependenciesList(BasePacmanRunner):
 
         if len(packages) == 0:
             clean_repo()
-        
+
         return packages
 
 class PackageDependenciesList(BasePacmanRunner):
@@ -191,7 +221,7 @@ class PackageDependenciesList(BasePacmanRunner):
 
         if len(packages) == 0:
             clean_repo()
-        
+
         return packages
 
 class Upgrade(BasePacmanRunner):
@@ -249,7 +279,10 @@ class TemplateHandler(web.RequestHandler):
         self.write(loader.load(path).generate(**context))
 
     def index(self):
-        context = {}
+        context = {'services': {'mod-bluez':get_systemd_status('mod-bluez'),
+                                'mod-ui':get_systemd_status('mod-ui'),
+                                'mod-host':get_systemd_status('mod-host'),
+                                'jackd':get_systemd_status('jackd')}}
         return context
 
 class DemoReset(web.RequestHandler):
@@ -269,21 +302,24 @@ class DemoReset(web.RequestHandler):
 
 
 application = web.Application(
-    RepositoryUpdate.urls('system/update') + 
-    PackageDownload.urls('system/package/download') + 
+    RepositoryUpdate.urls('system/update') +
+    PackageDownload.urls('system/package/download') +
     [
         (r"/system/upgrade/dependencies/?$", UpgradeDependenciesList),
         (r"/system/upgrade/?$", Upgrade),
         (r"/system/package/dependencies/(.+)/?$", PackageDependenciesList),
         (r"/system/package/install/(.+)/?$", PackageInstall),
         (r"/system/result/?$", LastResult),
+        (r"/system/stop/?$", ServiceStop),
+        (r"/system/start/?$", ServiceStart),
+        (r"/system/restart/?$", ServiceRestart),
         (r"/([a-z]+\.html)?$", TemplateHandler),
 
         (r"/demo/reset/?$", DemoReset),
-        
+
         (r"/(.*)", web.StaticFileHandler, {"path": HTML_DIR}),
         ],
-    
+
     debug=True)
 
 def run():
@@ -297,7 +333,7 @@ def run():
     clean_db()
     run_server()
     ioloop.IOLoop.instance().add_callback(check)
-    
+
     ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":

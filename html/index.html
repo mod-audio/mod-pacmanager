@@ -36,9 +36,35 @@
     <div id="download-installing" class="download-action hidden">Installing packages...</div>
     <div id="progressbar-wrapper"><div id="progressbar"></div></div>
   </div>
-  <div id="reset">
-    <button>Reset services</button>
+  <div id="service-status" style="floath: right; border-left: solid 1px; width: 49%;">
+    <h1>Services</h1>
+    <table style="width: 500px; text-align: center;">
+        <tr><th>Service:</th><th>Status</th><th>Commands</th></tr>
+        <tr><td>mod-bluez</td><td>{{services['mod-bluez']}}</td>
+            <td><a href="/system/stop/?service=mod-bluez">stop</a>
+            <a href="/system/start/?service=mod-bluez">start</a>
+            <a href="/system/restart/?service=mod-bluez">restart</a></td>
+        </tr>
+        <tr><td>mod-ui</td><td>{{services['mod-ui']}}</td>
+            <td><a href="/system/stop/?service=mod-ui">stop</a>
+            <a href="/system/start/?service=mod-ui">start</a>
+            <a href="/system/restart/?service=mod-ui">restart</a></td>
+        </tr>
+        <tr>
+            <td>mod-host</td><td>{{services['mod-host']}}</td>
+            <td><a href="/system/stop/?service=mod-host">stop</a>
+            <a href="/system/start/?service=mod-host">start</a>
+            <a href="/system/restart/?service=mod-host">restart</a></td>
+        </tr>
+        <tr><td>jackd</td><td>{{services['jackd']}}</td>
+            <td><a href="/system/stop/?service=jackd">stop</a>
+            <a href="/system/start/?service=jackd">start</a>
+            <a href="/system/restart/?service=jackd">restart</a></td>
+        </tr>
+    </table>
+    <div id="reset">
+    <button>Restart services</button>
     <div class="result"></div>
   </div>
 </body>
-    
+</html>
