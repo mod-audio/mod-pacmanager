@@ -41,6 +41,18 @@ def change_repo(repo):
         # can't open/create file
         pass
 
+def change_cloud(cloud):
+    url = "http://cloud.portalmod.com/api/"
+    if cloud == "testing":
+        url = "http://packages-testing.portalmod.com/api/"
+    try:
+        fh = open("/root/cloud", "w")
+        fh.write(url)
+        fh.close()
+    except IOError:
+        # can't open/create file
+        pass
+
 def get_systemd_status(service):
     command = ['systemctl', 'status', service]
     sp = subprocess.Popen(command, stdout=subprocess.PIPE)
@@ -219,6 +231,12 @@ class RepositoryChange(web.RequestHandler):
         change_repo(repository)
         self.redirect("/")
 
+class CloudChange(web.RequestHandler):
+    def get(self):
+        cloud = self.get_argument("cloud")
+        change_cloud(cloud)
+        self.redirect("/")
+
 class UpgradeDependenciesList(BasePacmanRunner):
     """
     Based on local repository database, gets a list of all packages that are needed for upgrading installed packages
@@ -299,6 +317,12 @@ class TemplateHandler(web.RequestHandler):
         except AttributeError:
             context = {}
         context['repository'] = REPOSITORY_ADDRESS
+        try:
+            cloud_url = open("/root/cloud").read().strip()
+        except IOError:
+            cloud_url = "http://cloud.portalmod.com/"
+        context['cloud'] = cloud_url
+
         self.write(loader.load(path).generate(**context))
 
     def index(self):
@@ -337,6 +361,7 @@ application = web.Application(
         (r"/system/start/?$", ServiceStart),
         (r"/system/restart/?$", ServiceRestart),
         (r"/system/repository/?$", RepositoryChange),
+        (r"/system/cloud/?$", CloudChange),
         (r"/([a-z]+\.html)?$", TemplateHandler),
 
         (r"/demo/reset/?$", DemoReset),

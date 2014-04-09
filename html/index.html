@@ -16,6 +16,21 @@
 </head>
 <body>
   <div id="actions" style="float: left; width: 49%; display: block;">
+    <div id="cloud-change">
+        <form action="/system/cloud/" method="get">
+            Cloud Repository: <select id="cloud" name="cloud" style="margin: 0px;">
+                <option value="testing" {%if "testing" in cloud%}selected{% end %}>testing</option>
+                <option value="stable" {%if "cloud." in cloud%}selected{% end %}>stable</option></select> <input type="submit" value="change" />
+        </form>
+    </div>
+    <div id="repo-change">
+        <form action="/system/repository/" method="get" style="margin: 0px;">
+            Packages Repository: <select id="repo" name="repo">
+                <option value="testing" {%if "testing" in repository%}selected{% end %}>testing</option>
+                <option value="homolog" {%if "homolog" in repository%}selected{% end %}>homologation</option>
+                <option value="stable" {%if "packages." in repository%}selected{% end %}>stable</option></select> <input type="submit" value="change" />
+        </form>
+    </div>
     <div id="install">
       Install package: <input /><button id="install">install</button>
     </div>
@@ -26,14 +41,6 @@
     </div>
     <div id="up-to-date" class="state">
       System is up-to-date
-    </div>
-    <div id="repo">
-        <form action="/system/repository/" method="get">
-            <p>Repository: <select id="repo" name="repo">
-                <option value="testing" {%if "testing" in repository%}selected{% end %}>testing</option>
-                <option value="homolog" {%if "homolog" in repository%}selected{% end %}>homologation</option>
-                <option value="stable" {%if "packages." in repository%}selected{% end %}>stable</option></select> <input type="submit" value="change" /></p>
-        </form>
     </div>
   </div>
   <div id="progress" style="float: left; width: 49%;">
